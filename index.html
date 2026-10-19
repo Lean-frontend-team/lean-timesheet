@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lean Attendance</title>
+    <link rel="stylesheet" href="/src/install/style.css" />
+    <script type="module" src="/src/install/main.js"></script>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>Lean Attendance</h1>
+        <p>Worked hours, average and balance from erp.lean.sa: Windows and Mac, any browser</p>
+      </div>
+    </header>
+    <main>
+      <section class="card install">
+        <a class="bookmarklet" id="bookmarklet" href="#" title="Drag me to your bookmarks bar"
+          >⏱ Lean Attendance</a
+        >
+        <div class="hint">
+          Drag this button to your <b>bookmarks bar</b>. Don't click it here: it only works on
+          erp.lean.sa.
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Install (one time)</h2>
+        <div class="tabs" role="tablist">
+          <button class="on" data-tab="chrome">Chrome / Edge</button>
+          <button data-tab="safari">Safari (Mac)</button>
+          <button data-tab="firefox">Firefox</button>
+        </div>
+        <div data-panel="chrome">
+          <ol>
+            <li>
+              Show the bookmarks bar: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> on Windows,
+              <kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> on Mac.<br /><span class="muted"
+                >In Edge it's called the favorites bar.</span
+              >
+            </li>
+            <li>Drag the blue <b>⏱ Lean Attendance</b> button above onto the bar.</li>
+          </ol>
+        </div>
+        <div data-panel="safari" hidden>
+          <ol>
+            <li>
+              Show the Favorites bar:
+              <b>View → Show Favorites Bar</b>
+              (<kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd>).
+            </li>
+            <li>Drag the blue <b>⏱ Lean Attendance</b> button above onto the Favorites bar.</li>
+            <li>
+              If clicking it later does nothing:
+              <b>Safari → Settings → Advanced</b>, tick <b>Show features for web developers</b>,
+              then in <b>Develop</b> turn on <b>Allow JavaScript from Smart Search Field</b>.
+            </li>
+          </ol>
+        </div>
+        <div data-panel="firefox" hidden>
+          <ol>
+            <li>
+              Show the bookmarks toolbar: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> on Windows,
+              <kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> on Mac.
+            </li>
+            <li>Drag the blue <b>⏱ Lean Attendance</b> button above onto the toolbar.</li>
+          </ol>
+        </div>
+        <p class="muted" style="margin: 12px 0 0">
+          Can't drag? Click
+          <button class="btn" id="copyLink">Copy bookmark address</button
+          ><span class="ok" id="copiedLink" hidden>Copied ✓</span><br />
+          then add a new bookmark, name it <b>Lean Attendance</b>, and paste into its URL / address
+          field.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Use</h2>
+        <ol>
+          <li>
+            Open
+            <a href="https://erp.lean.sa/my/outsource/attendance" target="_blank" rel="noopener"
+              >erp.lean.sa</a
+            >
+            and sign in as usual (Microsoft).
+          </li>
+          <li>Click <b>⏱ Lean Attendance</b> in your bookmarks bar.</li>
+          <li>Pick one or more months. Close with <kbd>Esc</kbd> or <b>×</b>.</li>
+        </ol>
+        <p class="muted" style="margin: 12px 0 0">
+          Alternative without a bookmark: on the ERP page open the browser console (<kbd>F12</kbd>
+          on Windows, <kbd>⌥</kbd>+<kbd>⌘</kbd>+<kbd>J</kbd> on Mac), click
+          <button class="btn" id="copyCode">Copy code</button
+          ><span class="ok" id="copiedCode" hidden>Copied ✓</span>, paste it into the console and
+          press Enter.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>How it calculates</h2>
+        <ul>
+          <li>
+            <b>Working day</b> = a Sunday–Thursday row in your attendance table →
+            <b>8 hours required</b>.
+          </li>
+          <li><b>WFH</b> (Work From Home) counts as a full 8-hour working day.</li>
+          <li>
+            <b>Not required</b>: Friday &amp; Saturday, approved leaves (from your Leave page),
+            Leave and Public Holiday days. Hours worked on those days count as extra.
+          </li>
+          <li><b>Absence / No Show</b> / a day with 00:00 still require 8 hours.</li>
+          <li><b>Today</b> is not included.</li>
+          <li>
+            <b>Balance</b> = total worked − required. <b>Average</b> = total worked ÷ working days.
+          </li>
+        </ul>
+        <p class="muted" style="margin: 12px 0 0">
+          Privacy: it runs only in your own browser, reads only your own ERP pages, and sends
+          nothing anywhere. To open faster, it keeps a copy of your last results in this browser
+          (for erp.lean.sa only).
+        </p>
+        <p class="muted" style="margin: 8px 0 0">
+          Tip: click it while you're on the <b>attendance page</b>. It then reads the data already
+          on screen instead of downloading it again.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Windows desktop app (optional)</h2>
+        <p class="muted" style="margin: 0">
+          Windows users can instead run
+          <b>Windows app\LeanAttendance.exe</b> from this folder: same calculation, with its own
+          sign-in window. No install needed. If Windows shows "Windows protected your PC", click
+          <b>More info → Run anyway</b>.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
