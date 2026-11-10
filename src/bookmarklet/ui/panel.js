@@ -1,28 +1,12 @@
-import { HOURS, ROOT_ID } from '../config.js';
+import { HOURS, ROOT_ID, TAB_KEY } from '../config.js';
 import { average, balance, calculate, required } from '../calculate.js';
 import { esc, fmt, monthLong, pad, sfmt, dayStr, todayStr } from '../format.js';
+import { loadJoinDate, loadPref, saveJoinDate, savePref } from '../cache.js';
 import { leaveDayMap } from '../leaves.js';
 import { describeToday } from '../today.js';
+import { renderLeavesTab } from './leavesTab.js';
+import { badge, kpi } from './parts.js';
 import styles from './styles.js';
-
-const badge = (s) => {
-  const t = (s || '').toLowerCase();
-  const [fg, bg] = /refus|reject|cancel|absence|no show/.test(t)
-    ? ['#b91c1c', '#fee2e2']
-    : /approved|validated|attend/.test(t)
-      ? ['#15803d', '#dcfce7']
-      : /approve|pending|waiting|draft/.test(t)
-        ? ['#b45309', '#fef3c7']
-        : /work from home|wfh/.test(t)
-          ? ['#6d28d9', '#ede9fe']
-          : /leave|holiday/.test(t)
-            ? ['#475569', '#e2e8f0']
-            : ['#1d4ed8', '#dbeafe'];
-  return s ? `<span class="badge" style="color:${fg};background:${bg}">${esc(s)}</span>` : '';
-};
-
-const kpi = (title, value, note, color, valueClass = '') =>
-  `<div class="kpi" style="--c:${color}"><div class="t">${title}</div><div class="v ${valueClass}">${value}</div><div class="n">${note || '&nbsp;'}</div></div>`;
 
 // Opens the overlay (isolated in a shadow root so ERP styles don't interfere).
 // Returns { setData, setStatus, showMessage }.
@@ -36,7 +20,11 @@ export function openPanel() {
   const root = host.attachShadow({ mode: 'open' });
   root.innerHTML = `<style>${styles}</style>
     <div class="overlay"><div class="panel">
-      <div class="bar"><b>Lean Attendance</b><span class="sub" style="color:#cbd5e1" id="status"></span><button id="close" title="Close (Esc)">×</button></div>
+      <div class="bar"><b>Lean Attendance</b>
+        <div class="tabs" role="tablist">
+          <button role="tab" data-tab="attendance">Attendance</button><button role="tab" data-tab="leaves">Leaves</button>
+        </div>
+        <span class="sub" id="status"></span><button id="close" title="Close (Esc)">×</button></div>
       <div class="body" id="body"><div class="center">Reading your attendance…</div></div>
     </div></div>`;
   const $ = (sel) => root.querySelector(sel);
@@ -46,7 +34,11 @@ export function openPanel() {
     leaves = [],
     leaveMap = new Map(),
     leavesState = 'loading',
-    menuOpen = false;
+    menuOpen = false,
+    joinDate = loadJoinDate(), // 'yyyy-MM-dd'; empty = count every leave on the Leave page
+    tab = loadPref(TAB_KEY) === 'leaves' ? 'leaves' : 'attendance',
+    typeFilter = '', // Leaves tab history: '' = all types
+    message = ''; // error shown instead of the tabs' content
   const selected = new Set();
   const ignoredDays = new Set(); // unticked in the Days list (until the panel is closed)
   let includeToday = false; // today is unticked by default; ticking it adds it to the totals
@@ -84,8 +76,26 @@ export function openPanel() {
 
   // ---------- render ----------
   function render() {
+    for (const b of root.querySelectorAll('[data-tab]')) {
+      b.classList.toggle('on', b.dataset.tab === tab);
+      b.setAttribute('aria-selected', String(b.dataset.tab === tab));
+    }
     const listScroll = root.querySelector('.menu .list')?.scrollTop || 0;
     const pageScroll = $('#body').scrollTop;
+    $('#body').innerHTML = message
+      ? `<div class="center">${message}</div>`
+      : tab === 'leaves'
+        ? renderLeavesTab({ leaves, leavesState, rows, joinDate, today, typeFilter })
+        : rows.length
+          ? attendanceHtml()
+          : '<div class="center">Reading your attendance…</div>';
+    if (tab === 'attendance') updateToday();
+    $('#body').scrollTop = pageScroll; // re-render keeps the page and month list where they were
+    const list = root.querySelector('.menu .list');
+    if (list) list.scrollTop = listScroll;
+  }
+
+  function attendanceHtml() {
     const allMonths = allMonthKeys();
     const r = calculate(rows, selected, leaveMap, ignoredDays, includeToday, today),
       t = r.total,
@@ -114,7 +124,7 @@ export function openPanel() {
         }),
     );
 
-    $('#body').innerHTML = `
+    return `
       <div class="head">
         <div><h1>${esc(title)}</h1><div class="sub">${r.days.length} days in the table · ${r.months.length} month${r.months.length === 1 ? '' : 's'}</div></div>
         <div class="picker">
@@ -212,7 +222,8 @@ export function openPanel() {
           })
           .join('')}
       </table></div>
-      <div class="section"><h2>Leaves · ${leavesState === 'loading' ? 'reading…' : leavesState === 'error' ? 'could not read the Leave page' : shownLeaves.length}</h2>
+      <div class="section"><div class="head2"><h2>Leaves in this period · ${leavesState === 'loading' ? 'reading…' : leavesState === 'error' ? 'could not read the Leave page' : shownLeaves.length}</h2>
+        <button class="quick" data-tab="leaves">All leave days since joining →</button></div>
         ${
           shownLeaves.length
             ? `<table><tr><th>Leave type</th><th>From</th><th>To</th><th>Duration</th><th>Status</th><th>Excluded from calculation</th></tr>
@@ -229,10 +240,6 @@ export function openPanel() {
               : ''
         }
       </div>`;
-    updateToday();
-    $('#body').scrollTop = pageScroll; // re-render keeps the page and month list where they were
-    const list = root.querySelector('.menu .list');
-    if (list) list.scrollTop = listScroll;
   }
 
   function updateToday() {
@@ -261,6 +268,29 @@ export function openPanel() {
   // ---------- events ----------
   // Month dropdown: stays open while ticking months; closes on a click outside it or Esc
   root.addEventListener('click', (e) => {
+    const tabBtn = e.target.closest('[data-tab]');
+    if (tabBtn) {
+      menuOpen = false;
+      if (tab !== tabBtn.dataset.tab) {
+        tab = tabBtn.dataset.tab;
+        savePref(TAB_KEY, tab);
+        render();
+        $('#body').scrollTop = 0;
+      }
+      return;
+    }
+    const filterBtn = e.target.closest('[data-filter]');
+    if (filterBtn) {
+      typeFilter = filterBtn.dataset.filter;
+      render();
+      return;
+    }
+    if (e.target.closest('[data-joinclear]')) {
+      joinDate = '';
+      saveJoinDate('');
+      render();
+      return;
+    }
     const inPicker = e.target.closest('.picker');
     if (!inPicker) {
       if (menuOpen) {
@@ -289,6 +319,16 @@ export function openPanel() {
     render();
   });
   root.addEventListener('change', (e) => {
+    if (e.target.dataset?.join) {
+      // While the year is being typed (0002, 0020…) the value is valid but not meant: wait for it
+      const v = e.target.value;
+      if (v && !(/^\d{4}-\d{2}-\d{2}$/.test(v) && v >= '1990-01-01' && v <= today)) return;
+      joinDate = v;
+      saveJoinDate(joinDate);
+      render();
+      root.querySelector('[data-join]')?.focus();
+      return;
+    }
     const day = e.target.dataset?.day;
     if (day === today) {
       includeToday = e.target.checked;
@@ -310,7 +350,7 @@ export function openPanel() {
   });
 
   // ---------- public API ----------
-  return {
+  const api = {
     // Any of { rows, leaves, leavesState }; new rows pick the current month if none is selected
     setData(data) {
       if (data.rows) {
@@ -330,7 +370,10 @@ export function openPanel() {
       $('#status').textContent = text;
     },
     showMessage(html) {
-      $('#body').innerHTML = `<div class="center">${html}</div>`;
+      message = html;
+      render();
     },
   };
+  render(); // marks the open tab and shows its loading text
+  return api;
 }

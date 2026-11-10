@@ -29,10 +29,13 @@ src/bookmarklet/           the code that runs on erp.lean.sa
   calculate.js             working days, required hours, balance, average
   today.js                 "you can leave at…" line and balance advice
   leaves.js                Leave page parsing → approved leave days
+  leaveSummary.js          leave days taken per type since the join date
   erp.js                   reading the attendance and leave pages
   cache.js                 last results saved in localStorage
   format.js                time/date helpers
-  ui/panel.js, styles.js   the overlay (shadow DOM)
+  ui/panel.js, styles.js   the overlay (shadow DOM) and its Attendance / Leaves tabs
+  ui/leavesTab.js          the Leaves tab
+  ui/parts.js              badge and KPI card HTML shared by both tabs
 tests/                     unit tests for the pure logic
 vite.config.js             bundles src/bookmarklet into a minified IIFE and injects it as
                            `virtual:bookmarklet` into the install page
@@ -60,6 +63,18 @@ To redeploy without a change, run **Deploy** from the repo's Actions tab
 - **Absence / No Show** and days with 00:00 still require 8 hours.
 - **Today** is left out unless it's ticked in the Days list.
 - **Balance** = total worked − required. **Average** = total worked ÷ working days.
+
+### Leaves tab
+
+- Shows leave days taken per type, a split by year, and the full leave history (filterable by
+  type). The month picker on the Attendance tab doesn't affect it.
+- Counts approved leaves from the **Joined Lean on** date (saved in this browser). With no
+  date set, every leave on the Leave page is counted.
+- The Leave page has no type column, so the type (Annual, Sick, Hajj, Marriage, Maternity,
+  Paternity, Bereavement, Exam, Unpaid, Other) is guessed from the description, typos included
+  (`leaveSummary.js`).
+- **Working days** = Sun–Thu days that aren't public holidays. **Calendar days** counts every day.
+  Approved days after today are shown as **Upcoming**. A day in two leaves counts once.
 
 ## Testing on a local page
 

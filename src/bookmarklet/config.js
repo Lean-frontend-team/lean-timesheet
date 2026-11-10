@@ -12,4 +12,6 @@ export const EXCL_TEXT = /holiday|leave/i;
 export const WFH_TEXT = /work\s*from\s*home|\bwfh\b/i;
 export const ROOT_ID = 'lean-attendance-root';
 export const CACHE_KEY = 'lean-attendance-cache-v1';
+export const JOIN_KEY = 'lean-attendance-join-date'; // 'yyyy-MM-dd', set in the Leaves tab
+export const TAB_KEY = 'lean-attendance-tab'; // 'attendance' | 'leaves'
 export const ALLOWED_HOST = /(^|\.)erp\.lean\.sa$/;

@@ -1,4 +1,23 @@
-import { CACHE_KEY } from './config.js';
+import { CACHE_KEY, JOIN_KEY } from './config.js';
+
+// Small saved settings (join date, last open tab); '' when missing or storage is blocked
+export const loadPref = (key) => {
+  try {
+    return localStorage.getItem(key) || '';
+  } catch {
+    return '';
+  }
+};
+export const savePref = (key, value) => {
+  try {
+    if (value) localStorage.setItem(key, value);
+    else localStorage.removeItem(key);
+  } catch {
+    /* blocked: keep it for this session only */
+  }
+};
+export const loadJoinDate = () => loadPref(JOIN_KEY);
+export const saveJoinDate = (s) => savePref(JOIN_KEY, s);
 import { anyDate, dayStr } from './format.js';
 
 // Saved copy (this browser only, erp.lean.sa origin): shown instantly, then refreshed from the ERP
